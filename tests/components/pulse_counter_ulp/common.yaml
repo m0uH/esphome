@@ -9,3 +9,5 @@ sensor:
     debounce: 4
     update_interval: 15s
     edges_wakeup: 4
+    enable_pin: 2
+    enable_time: 2ms

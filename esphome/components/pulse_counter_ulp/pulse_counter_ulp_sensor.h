@@ -25,6 +25,8 @@ class UlpProgram {
     microseconds sleep_duration_;
     uint16_t debounce_;
     uint16_t edges_wakeup_;
+    InternalGPIOPin *enable_pin_;
+    microseconds enable_time_;
   };
   struct State {
     uint16_t rising_edge_count_;
@@ -47,7 +49,9 @@ class PulseCounterUlpSensor : public sensor::Sensor, public PollingComponent {
   void set_sleep_duration(uint32_t duration_us) { this->config_.sleep_duration_ = duration_us * microseconds{1}; }
   void set_debounce(uint16_t debounce) { this->config_.debounce_ = debounce; }
   void set_edges_wakeup(uint16_t edges_wakeup) { this->config_.edges_wakeup_ = edges_wakeup; }
-  void set_total_sensor(sensor::Sensor *total_sensor) { total_sensor_ = total_sensor; }
+  void set_total_sensor(sensor::Sensor *total_sensor) { this->total_sensor_ = total_sensor; }
+  void set_enable_pin(InternalGPIOPin *enable_pin) { this->config_.enable_pin_ = enable_pin; }
+  void set_enable_time(uint32_t duration_us) { this->config_.enable_time_ = duration_us * microseconds{1}; }
 
   void set_total_pulses(uint32_t pulses);
 

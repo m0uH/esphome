@@ -85,6 +85,16 @@ edge_count_total:
 edges_wakeup:
   .long 0
 
+  /* Pin to be enabled prior to reading pulses. */
+  .global en_io_pin
+en_io_pin:
+  .long 0
+
+  /* Time in ms to keep the enable pin on. */
+  .global en_io_time
+en_io_time:
+  .long 0
+
   /* RTC IO number used to sample the input signal.
      Set by main program. */
   .global io_number
@@ -100,6 +110,108 @@ entry:
   ld r2, r3, 0
   add r2, r2, 1
   st r2, r3, 0
+
+  /* Enable pulse generator via IO pin, wait user specified ms */
+  /* Load en_io_time, skip loop in case it is zero */
+  move r0, en_io_time
+  jump en_loop_skip, eq
+  sub r0, r0, 1 /* Decr. time by 1, as we use this offset to detect if this feature is used */
+
+  /* Get enable IO pin */
+  move r0, en_io_pin
+  ld r0, r0, 0
+
+  /* Multiply pin number by 2 (each RTCIO requires 2 instructions) */
+  lsh r0, r0, 1
+
+  /* Make address absolute */
+  move r1, en_io_pin_set
+  add r0, r0, r1
+
+  /* Jump to the correct instruction */
+  jump r0
+
+en_io_pin_set:
+  /* RTCIO 0 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 0, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 1 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 1, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 2 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 2, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 3 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 3, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 4 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 4, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 5 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 5, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 6 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 6, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 7 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 7, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 8 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 8, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 9 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 9, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 10 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 10, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 11 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 11, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 12 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 12, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 13 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 13, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 14 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 14, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 15 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 15, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 16 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 16, 1, 1)
+  jump en_loop_wait
+
+  /* RTCIO 17 HIGH */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 17, 1, 1)
+  jump en_loop_wait
+  /*WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG,RTC_GPIO_OUT_DATA_W1TS_S+4,1,1)*/
+
+  /* Wait user specified number of ms, assuming a frequency of 8MHz */
+en_loop_wait:
+  wait 4000                  /* Assuming 8 MHz fixed wait time of 4000cycles = 0.5ms */
+  sub r0, r0, 1              /* Decre. loop variable */
+  jumpr en_loop_wait, 0, gt      /* Stop loop once loop variable reached zero */
+
+en_loop_skip:
 
   /* Load io_number */
   move r3, io_number
@@ -132,11 +244,109 @@ read_io_high:
   rsh r0, r0, r3
 
 read_done:
-  and r0, r0, 1
+  and r3, r0, 1
+
+  /* Disable pulse generator via IO pin */
+  /* Check if en/dis pin is active */
+  move r0, en_io_time
+  jump dis_en_skip, eq
+
+  /* Set en_io_pin low */
+
+  /* Get enable IO pin */
+  move r0, en_io_pin
+  ld r0, r0, 0
+
+  /* Multiply pin number by 2 (each RTCIO requires 2 instructions) */
+  lsh r0, r0, 1
+
+  /* Make address absolute */
+  move r1, en_io_pin_clear
+  add r0, r0, r1
+
+  /* Jump to the correct instruction */
+  jump r0
+
+en_io_pin_clear:
+  /* RTCIO 0 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 0, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 1 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 1, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 2 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 2, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 3 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 3, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 4 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 4, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 5 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 5, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 6 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 6, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 7 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 7, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 8 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 8, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 9 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 9, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 10 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 10, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 11 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 11, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 12 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 12, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 13 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 13, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 14 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 14, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 15 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 15, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 16 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 16, 1, 1)
+  jump dis_en_skip
+
+  /* RTCIO 17 LOW */
+  WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 17, 1, 1)
+  jump dis_en_skip
+  /*WRITE_RTC_REG(RTC_GPIO_OUT_W1TC_REG, RTC_GPIO_OUT_DATA_W1TC_S + 4, 1, 1)*/
+
+dis_en_skip:
+
   /* State of input changed? */
-  move r3, next_edge
-  ld r3, r3, 0
-  add r3, r0, r3
+  move r2, next_edge
+  ld r2, r2, 0
+  add r3, r3, r2
   and r3, r3, 1
   jump changed, eq
   /* Not changed */

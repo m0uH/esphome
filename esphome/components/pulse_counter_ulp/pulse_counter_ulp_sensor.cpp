@@ -46,6 +46,34 @@ std::unique_ptr<UlpProgram> UlpProgram::start(const Config &config) {
     ESP_LOGE(TAG, "GPIO used for pulse counting must be an RTC IO");
   }
 
+  /* GPIO used for enable pulse generator. */
+  if (config.enable_pin_ != nullptr) {
+    gpio_num_t gpio_num_enable = static_cast<gpio_num_t>(config.enable_pin_->get_pin());
+    int rtcio_num_enable = rtc_io_number_get(gpio_num_enable);
+    if (!rtc_gpio_is_valid_gpio(gpio_num_enable)) {
+      ESP_LOGE(TAG, "GPIO used for enabling pulse generator must be an RTC IO");
+    }
+
+    rtc_gpio_init(gpio_num_enable);
+    rtc_gpio_set_direction(gpio_num_enable, RTC_GPIO_MODE_OUTPUT_ONLY);
+    rtc_gpio_set_level(gpio_num_enable, 0);
+    rtc_gpio_hold_dis(gpio_num_enable);
+
+    /* Store pin number in ulp memory */
+    ulp_en_io_pin = rtcio_num_enable;
+
+    /* Store time with an offset to allow waiting time of zero,
+       while using actual zero for detecting if this feature is enabled.
+       Using a factor of two to allow half a millisecond as smallest interval. */
+    constexpr uint32_t ratio_us_to_ms = std::chrono::duration<uint32_t, std::milli>{1} / microseconds{2};
+    ulp_en_io_time = 1u + ((config.enable_time_) / ratio_us_to_ms).count();
+
+    ESP_LOGD(TAG, "Enable pulse generator switching on pin %d using a delay of %fms", rtcio_num_enable, (float)(ulp_en_io_time - 1) * 0.5);
+  } else {
+    ulp_en_io_pin = 0;
+    ulp_en_io_time = 0;
+  }
+
   /* Initialize variables in ULP program.
    * Note that the ULP reads only the lower 16 bits of these variables.  */
   ulp_rising_edge_en = config.rising_edge_mode_ != CountMode::DISABLE;
@@ -114,6 +142,9 @@ void PulseCounterUlpSensor::setup() {
 
   this->config_.pin_->setup();
 
+  ESP_LOGI(TAG, "Forcing RTC peripherals ON");
+  ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
+
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) {
     ESP_LOGD(TAG, "Did not wake up from sleep, assuming restart or first boot and setting up ULP program");
     this->storage_ = UlpProgram::start(this->config_);
@@ -153,6 +184,14 @@ void PulseCounterUlpSensor::dump_config() {
   ESP_LOGCONFIG(TAG, "  Sleep Duration: %" PRIu32 " µs", this->config_.sleep_duration_ / microseconds{1});
   ESP_LOGCONFIG(TAG, "  Debounce: %" PRIu16, this->config_.debounce_);
   ESP_LOGCONFIG(TAG, "  Edges Wakeup: %" PRIu16, this->config_.edges_wakeup_);
+  if (this->total_sensor_ != nullptr) {
+    LOG_SENSOR("  ", "Total Counter", this->total_sensor_);
+  }
+  if (this->config_.enable_pin_ != nullptr) {
+    LOG_PIN("  Enable Pin: ", this->config_.enable_pin_);
+    ESP_LOGCONFIG(TAG, "    Enable Time: %" PRIu32 " µs", this->config_.enable_time_ / microseconds{1});
+  }
+
   LOG_UPDATE_INTERVAL(this);
 }
 

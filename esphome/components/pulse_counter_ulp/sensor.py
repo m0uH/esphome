@@ -8,6 +8,8 @@ from esphome.const import (
     CONF_COUNT_MODE,
     CONF_DEBOUNCE,
     CONF_EDGES_WAKEUP,
+    CONF_ENABLE_PIN,
+    CONF_ENABLE_TIME,
     CONF_FALLING_EDGE,
     CONF_ID,
     CONF_PIN,
@@ -94,6 +96,10 @@ CONFIG_SCHEMA = cv.All(
                 accuracy_decimals=0,
                 state_class=STATE_CLASS_TOTAL_INCREASING,
             ),
+            cv.Optional(CONF_ENABLE_PIN): pins.internal_gpio_output_pin_schema,
+            cv.Optional(
+                CONF_ENABLE_TIME, default="0us"
+            ): cv.positive_time_period_microseconds,
         },
     )
     .extend(cv.polling_component_schema("60s")),
@@ -131,6 +137,11 @@ async def to_code(config):
     if CONF_TOTAL in config:
         sens = await sensor.new_sensor(config[CONF_TOTAL])
         cg.add(var.set_total_sensor(sens))
+
+    if CONF_ENABLE_PIN in config:
+        en_pin = await cg.gpio_pin_expression(config[CONF_ENABLE_PIN])
+        cg.add(var.set_enable_pin(en_pin))
+        cg.add(var.set_enable_time(config[CONF_ENABLE_TIME]))
 
 
 @automation.register_action(

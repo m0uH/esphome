@@ -19,6 +19,8 @@ extern uint32_t ulp_debounce_max_count;
 extern uint32_t ulp_edge_count_total;
 extern uint32_t ulp_edge_detected;
 extern uint32_t ulp_edges_wakeup;
+extern uint32_t ulp_en_io_pin;
+extern uint32_t ulp_en_io_time;
 extern uint32_t ulp_entry;
 extern uint32_t ulp_falling;
 extern uint32_t ulp_falling_edge_en;
