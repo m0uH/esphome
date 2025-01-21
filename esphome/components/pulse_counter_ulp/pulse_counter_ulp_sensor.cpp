@@ -84,8 +84,10 @@ std::unique_ptr<UlpProgram> UlpProgram::start(const Config &config) {
   ulp_debounce_counter = 3;
   ulp_edges_wakeup = config.edges_wakeup_ > 0 ? config.edges_wakeup_ : std::numeric_limits<uint16_t>::max();
   ulp_debounce_max_count = config.debounce_;
-  ulp_next_edge = static_cast<uint16_t>(!config.pin_->digital_read());
   ulp_io_number = rtcio_num; /* map from GPIO# to RTC_IO# */
+  /* Using an invalid value to detect if initialization needed.
+     Due to switchting of pulse generator this need to be done in ULP */
+  ulp_next_edge = 4;
 
   /* If pin is inverted, we need to swap activating detection of rising / falling edges */
   if (config.pin_->is_inverted()) {

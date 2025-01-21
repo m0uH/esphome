@@ -345,8 +345,15 @@ dis_en_skip:
 
   /* State of input changed? */
   move r2, next_edge
-  ld r2, r2, 0
-  add r3, r3, r2
+  ld r0, r2, 0
+  jumpr skip_next_edge_init, 4, lt
+  /* In first run init next_edge with the current state */
+  move r0, r3 /* Load current state */
+  add r0, r0, 1 /* Negate it */
+  and r0, r0, 1 /* = */
+  st r0, r2, 0 /* Store to next_edge */
+skip_next_edge_init:
+  add r3, r3, r0
   and r3, r3, 1
   jump changed, eq
   /* Not changed */
